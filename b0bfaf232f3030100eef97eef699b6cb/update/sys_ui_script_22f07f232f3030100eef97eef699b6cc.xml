@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_ui_script">
+    <sys_ui_script action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <description/>
+        <global>false</global>
+        <name>x_283014_matomo.MatomoAnalytics</name>
+        <script><![CDATA[angular.module('sn.$sp')
+    .factory('matomoAnalyticsService', function($log, $window, $rootScope) {
+        return {
+            startTrackPage: startTrackPage,
+            stopTrackPage: stopTrackPage,
+            trackEvent: trackEvent,
+            trackSearch: trackSearch
+        };
+
+        function trackSearch(term, resultCount, searchType) {
+            $window._paq.push(['trackSiteSearch', term, searchType, resultCount]);
+        }
+
+        function trackEvent(category, action, name, value) {
+			
+            name = name ? name : '';
+            value = value ? value : '';
+            $window._paq.push(['trackEvent', category, action, name, value]);
+        }
+
+        function startTrackPage(referrer, newUrl) {
+			$log.log('startTrackPage');
+            $window._paq.push(['setReferrerUrl', referrer]);
+            $window._paq.push(['setCustomUrl', newUrl]);
+        }
+
+        function stopTrackPage(title) {
+			$log.log('stopTrackPage');
+            $window._paq.push(['setDocumentTitle', title]);
+
+            // remove all previously assigned custom variables, requires Matomo (formerly Piwik) 3.0.2
+            $window._paq.push(['deleteCustomVariables', 'page']);
+            $window._paq.push(['trackPageView']);
+
+            $window._paq.push(['trackAllContentImpressions']);
+            $window._paq.push(['enableLinkTracking']);
+
+        }
+
+    })
+    .service('matomoTracker', function($rootScope, $http, $window, $log, matomoAnalyticsService) {
+        this.config = {};
+        this.isInitialized = false;
+
+        this.init = function() {
+            if (this.isInitialized) {
+                return;
+            }
+            var _paq = window._paq = window._paq || [];
+           // _paq.push(['setUserId', window.NOW.user_id_hashed || window.NOW.user_id]);
+            getConfig()
+                .then(function(config) {
+                    this.config = config;
+                    _paq.push(['setTrackerUrl', this.config.trackerUrl + '/matomo.php']);
+                    _paq.push(['setSiteId', this.config.siteId + '']);
+					_paq.push(['enableHeartBeatTimer']);
+                    var d = document,
+                        g = d.createElement('script'),
+                        s = d.getElementsByTagName('script')[0];
+                    g.type = 'text/javascript';
+                    g.async = true;
+                    g.src = this.config.trackerUrl + '/matomo.js';
+                    s.parentNode.insertBefore(g, s);
+                    this.isInitialized = true;
+                });
+        };
+
+        function getConfig() {
+            return $http.get('/api/283014/matomo/config').then(function(response) {
+                return response.data.result;
+            });
+        }
+
+        this.registerHandlers = function() {
+            $rootScope.$on('$locationChangeSuccess', function(event, newUrl, oldUrl) {
+                matomoAnalyticsService.startTrackPage(oldUrl, newUrl);
+            });
+            $rootScope.$on('sp.page.loaded', function(event, newUrl, oldUrl, newState, oldState) {
+                var page = event.targetScope.page;
+                matomoAnalyticsService.stopTrackPage(page.title);
+            });
+            $rootScope.$on('$sp.sc_cat_item.submitted', function(event, data) {
+                var item = event.targetScope.data.sc_cat_item;
+                matomoAnalyticsService.trackEvent('Form', 'Submit Catalog Item', item.name);
+            });
+            $rootScope.$on('$sp.sc_order_guide.submitted', function(event, data) {
+                var count = event.targetScope.includedItemsCounter;
+				var item = event.targetScope.data.sc_cat_item;
+                matomoAnalyticsService.trackEvent('Form', 'Submit Order Guide', item.name, count);
+            });
+            
+        };
+    })
+    .directive('matomoAnalyticsOn', function($rootScope, matomoAnalyticsService) {
+
+        function link($scope, element, attrs) {
+            var domElement = element[0];
+            var eventType = attrs.matomoAnalyticsOn || 'click';
+            var name = attrs.matomoAnalyticsEventname;
+            if (!name) {
+                //eventname is mandatory attribute. If it is not there, return.
+                return;
+            }
+            angular.element(domElement).on(eventType + '.analyticson', handleEvent);
+
+            $scope.$on('$destroy', function() {
+                angular.element(domElement).off(eventType + '.analyticson');
+            });
+
+            function handleEvent(event) {
+
+                var eventName = '[' + event.type + '] ' + name;
+                var trackingData = {};
+                trackingData.eventType = event.type;
+
+                if (attrs.matomoAnalyticsIf) {
+                    if (!$scope.$eval(attrs.matomoAnalyticsIf)) {
+                        return; // Cancel this event if we don't pass the lego-analytics-if condition
+                    }
+                }
+
+                // Allow components to pass through an expression that gets merged on to the event properties
+                // eg. lego-analytics-properties='myComponentScope.someConfigExpression.$analyticsProperties'
+                if (attrs.matomoAnalyticsProperties) {
+                    angular.extend(trackingData, $scope.$eval(attrs.matomoAnalyticsProperties));
+                }
+
+                matomoAnalyticsService.trackEvent(eventName, trackingData);
+
+
+            }
+        }
+
+        return {
+            restrict: 'A',
+            link: link
+        };
+    })
+    .run(function($log, matomoTracker) {
+        try {
+            matomoTracker.init();
+            matomoTracker.registerHandlers();
+        } catch (ex) {
+            $log.log('ERROR setting up matomo: ' + ex);
+        }
+
+    });]]></script>
+        <script_name>MatomoAnalytics</script_name>
+        <sys_class_name>sys_ui_script</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2021-06-23 20:50:35</sys_created_on>
+        <sys_id>22f07f232f3030100eef97eef699b6cc</sys_id>
+        <sys_mod_count>6</sys_mod_count>
+        <sys_name>x_283014_matomo.MatomoAnalytics</sys_name>
+        <sys_package display_value="Matomo-ServiceNow" source="x_283014_matomo">b0bfaf232f3030100eef97eef699b6cb</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Matomo-ServiceNow">b0bfaf232f3030100eef97eef699b6cb</sys_scope>
+        <sys_update_name>sys_ui_script_22f07f232f3030100eef97eef699b6cc</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2021-06-23 21:43:30</sys_updated_on>
+        <ui_type>1</ui_type>
+        <use_scoped_format>false</use_scoped_format>
+    </sys_ui_script>
+</record_update>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_js_include">
+    <sp_js_include action="INSERT_OR_UPDATE">
+        <display_name>Matomo Analytics</display_name>
+        <source>local</source>
+        <sys_class_name>sp_js_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2021-06-23 21:25:20</sys_created_on>
+        <sys_id>46d8ff232f7030100eef97eef699b6bb</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>Matomo Analytics</sys_name>
+        <sys_package display_value="Matomo-ServiceNow" source="x_283014_matomo">b0bfaf232f3030100eef97eef699b6cb</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Matomo-ServiceNow">b0bfaf232f3030100eef97eef699b6cb</sys_scope>
+        <sys_ui_script display_value="x_283014_matomo.MatomoAnalytics">22f07f232f3030100eef97eef699b6cc</sys_ui_script>
+        <sys_update_name>sp_js_include_46d8ff232f7030100eef97eef699b6bb</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2021-06-23 21:25:20</sys_updated_on>
+        <url/>
+    </sp_js_include>
+</record_update>
